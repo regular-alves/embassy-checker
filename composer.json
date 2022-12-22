@@ -1,0 +1,21 @@
+{
+    "name": "rodrigo-alves/embassy-checker",
+    "type": "project",
+    "autoload": {
+        "psr-4": {
+            "EmbassyChecker\\": "src/"
+        }
+    },
+    "authors": [
+        {
+            "name": "Rodrigo Alves",
+            "email": "rodrigo.gois@live.com"
+        }
+    ],
+    "require": {
+        "php-webdriver/webdriver": "^1.12",
+        "smalot/pdfparser": "^2.2",
+        "vlucas/phpdotenv": "^5.5",
+        "irazasyed/telegram-bot-sdk": "^3.9"
+    }
+}
