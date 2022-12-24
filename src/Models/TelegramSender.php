@@ -10,10 +10,12 @@ class TelegramSender {
 
     public function __construct() {
         $this->bot = new Api( $_ENV['TELEGRAM_TOKEN'] );
-
-        $this->getChats();
+        $this->chatIds = explode( ',', $_ENV['TELEGRAM_USER_ID'] );
     }
 
+    /**
+     * @deprecated
+     */
     private function getChats(): void {
         $response = $this->bot->getUpdates();
         $chatIds = [];
