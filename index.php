@@ -158,7 +158,7 @@ $isSooner = $seenDate < $appointmentDate;
 $telegram->sendMessage(
   $isSooner
     ? 'Encontrei vagas para ' . date( 'd/m/Y', $seenDate ) . ".\n" . $url
-    : 'Não encotrei datas mais recentes',
+    : 'Não encontrei datas mais recentes',
   $isSooner
 );
 $driver->quit();
