@@ -19,6 +19,7 @@ if ( !isset( $_ENV['USR_EMAIL'], $_ENV['USR_PASSWD'], $_ENV['TELEGRAM_TOKEN'], $
   throw new \Exception( 'Please, check your env file.' );
 }
 
+$notifyOnlyDates = $_ENV['NOTIFY_ONLY_DATES'] ?? false;
 $url = 'https://ais.usvisa-info.com/pt-br';
 
 $telegram = new TelegramSender();
@@ -111,7 +112,10 @@ try {
     WebDriverExpectedCondition::elementToBeClickable( $calendar ) 
   );
 }catch(TimeoutException $exception) {
-  $telegram->sendMessage('Não existem horários disponíveis');
+  if ( ! $notifyOnlyDates ) {
+    $telegram->sendMessage('Reagendamento não está disponível');
+  }
+
   $driver->quit();
   die();
 }
@@ -155,10 +159,15 @@ while( ! $foundDate && $tries < 20 ) {
 
 $isSooner = $seenDate < $appointmentDate;
 
-$telegram->sendMessage(
-  $isSooner
-    ? 'Encontrei vagas para ' . date( 'd/m/Y', $seenDate ) . ".\n" . $url
-    : 'Não encontrei datas mais recentes',
-  $isSooner
-);
+if ( ! $notifyOnlyDates && ! $isSooner ) {
+  $telegram->sendMessage( 'Não encontrei datas mais recentes' );
+}
+
+if ( $isSooner ) {
+  $telegram->sendMessage(
+    'Encontrei vagas para ' . date( 'd/m/Y', $seenDate ) . ".\n" . $url,
+    true
+  );
+}
+
 $driver->quit();
