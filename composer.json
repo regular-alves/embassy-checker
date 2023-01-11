@@ -4,7 +4,8 @@
     "autoload": {
         "psr-4": {
             "EmbassyChecker\\": "src/"
-        }
+        },
+        "files": ["./src/utils.php"]
     },
     "authors": [
         {
@@ -12,10 +13,24 @@
             "email": "rodrigo.gois@live.com"
         }
     ],
+    "scripts": {
+        "cs": "vendor/bin/phpcs --standard=PSR12 src/"
+    },
     "require": {
         "php-webdriver/webdriver": "^1.12",
         "smalot/pdfparser": "^2.2",
         "vlucas/phpdotenv": "^5.5",
         "irazasyed/telegram-bot-sdk": "^3.9"
+    },
+    "require-dev": {
+        "squizlabs/php_codesniffer": "*",
+        "phan/phan": "^5.4",
+        "brainmaestro/composer-git-hooks": "^2.8"
+    },
+    "extra": {
+        "hooks": {
+            "pre-commit": ["@cs"],
+            "post-merge": "composer install"
+        }
     }
 }

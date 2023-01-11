@@ -9,9 +9,31 @@ use Facebook\WebDriver\Remote\RemoteWebDriver;
  * @param string $screenshot_name capture save path
  * @throws Exception
  */
-function takeFullScreenshot( RemoteWebDriver $driver, string $screenshot_name ): void {
-    $total_width = $driver->executeScript('return Math.max.apply(null, [document.body.clientWidth, document.body.scrollWidth, document.documentElement.scrollWidth, document.documentElement.clientWidth])');
-    $total_height = $driver->executeScript('return Math.max.apply(null, [document.body.clientHeight, document.body.scrollHeight, document.documentElement.scrollHeight, document.documentElement.clientHeight])');
+function takeFullScreenshot(RemoteWebDriver $driver, string $screenshot_name): void
+{
+    $total_width = $driver->executeScript(
+        'return Math.max.apply(
+            null,
+            [
+                document.body.clientWidth,
+                document.body.scrollWidth,
+                document.documentElement.scrollWidth,
+                document.documentElement.clientWidth
+            ]
+        )'
+    );
+
+    $total_height = $driver->executeScript(
+        'return Math.max.apply(
+            null,
+            [
+                document.body.clientHeight,
+                document.body.scrollHeight,
+                document.documentElement.scrollHeight,
+                document.documentElement.clientHeight
+            ]
+        )'
+    );
 
     $viewport_width = $driver->executeScript('return document.documentElement.clientWidth');
     $viewport_height = $driver->executeScript('return document.documentElement.clientHeight');
@@ -23,7 +45,7 @@ function takeFullScreenshot( RemoteWebDriver $driver, string $screenshot_name ):
     $repeat_x = ceil($total_width / $viewport_width);
     $repeat_y = ceil($total_height / $viewport_height);
 
-    for ($x = 0; $x < $repeat_x; $x ++) {
+    for ($x = 0; $x < $repeat_x; $x++) {
         $x_pos = $x * $viewport_width;
 
         $before_top = -1;
