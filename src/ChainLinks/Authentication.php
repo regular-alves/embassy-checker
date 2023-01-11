@@ -6,7 +6,7 @@ use Facebook\WebDriver\Remote\RemoteWebDriver;
 use Facebook\WebDriver\WebDriverBy;
 
 class Authentication extends Handler {
-    public function handle( RemoteWebDriver $driver, array $data ) {
+    public function handle( RemoteWebDriver $driver = null, array $data ) {
         $userEmailField = WebDriverBy::id( 'user_email' );
 
         $this->waitForPresence( $driver, $userEmailField );

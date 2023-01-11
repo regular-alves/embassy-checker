@@ -11,14 +11,18 @@ use Facebook\WebDriver\WebDriverBy;
 class SearchingForNewSpot extends Handler {
     private $messenger = null;
     private $notifyEverything = true;
+    private $automaticSchedule = false;
+    private $fieldId;
 
-    public function __construct() {
+    public function __construct( string $fieldId ) {
         $this->messenger = new TelegramSender();
         $this->notifyEverything = $_ENV['NOTIFY_ONLY_DATES'] ?? false;
+        $this->automaticSchedule = $_ENV['AUTOMATIC_RESCHEDULE'] ?? false;
+        $this->fieldId = $fieldId;
     }
 
-    public function handle( RemoteWebDriver $driver, array $data ) {
-        $calendar = WebDriverBy::id( 'appointments_consulate_appointment_date' );
+    public function handle( RemoteWebDriver $driver = null, array $data ) {
+        $calendar = WebDriverBy::id( $this->fieldId );
 
         try {
             $this->waitForBeClickable( $driver, $calendar );
@@ -71,14 +75,17 @@ class SearchingForNewSpot extends Handler {
             $tries++;
         }
 
-        $isSooner = $availableDate <
-            ( $data['appointment-date'] ?? PHP_INT_MAX );
+        $isSooner = $availableDate < ( $data['appointment-date'] ?? PHP_INT_MAX );
 
-        if ( ! $this->notifyEverything && ! $isSooner ) {
+        if ( $this->notifyEverything && ! $isSooner ) {
             $this->messenger->sendMessage( 'Não encontrei datas mais recentes' );
         }
-
-        if ( $isSooner ) {
+            
+        if ( $isSooner && $this->automaticSchedule ) {
+            $foundDate[0]->click();
+        }
+        
+        if ( $isSooner && ! $this->automaticSchedule ) {
             $this->messenger->sendMessage(
                 sprintf( "Encontrei vagas para %s.\n%s", date( 'd/m/Y', $availableDate ), $data['url'] ),
                 true

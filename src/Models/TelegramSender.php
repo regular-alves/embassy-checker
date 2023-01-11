@@ -3,6 +3,7 @@
 namespace EmbassyChecker\Models;
 
 use Telegram\Bot\Api;
+use Telegram\Bot\FileUpload\InputFile;
 
 class TelegramSender {
     private array $chatIds = [];
@@ -35,6 +36,22 @@ class TelegramSender {
                 'chat_id' => $chatId, 
                 'text' => $message,
                 'disable_notification' => ! $urgent
+            ]);
+
+            $messageIds[$chatId] = $response->getMessageId(); 
+        }
+
+        return $messageIds;
+    }
+
+    public function sendFile( string $location ): array {
+        $messageIds = [];
+
+        foreach ( $this->chatIds as $chatId ) {
+            $response = $this->bot->sendPhoto([
+                'chat_id' => $chatId, 
+                'photo' => new InputFile( $location ), 
+                'caption' => 'Some caption'
             ]);
 
             $messageIds[$chatId] = $response->getMessageId(); 

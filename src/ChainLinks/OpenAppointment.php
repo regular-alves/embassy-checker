@@ -1,4 +1,4 @@
-<?php 
+<?php
 
 namespace EmbassyChecker\ChainLinks;
 
@@ -21,7 +21,7 @@ class OpenAppointment extends Handler {
         'december' => 'dezembro',
     ];
 
-    public function handle(RemoteWebDriver $driver, array $data) {
+    public function handle(RemoteWebDriver $driver = null, array $data) {
         $appointment = WebDriverBy::cssSelector( '.attend_appointment .actions .button.primary' );
 
         $this->waitForPresence( $driver, $appointment );

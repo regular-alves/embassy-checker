@@ -10,7 +10,7 @@ use Facebook\WebDriver\WebDriverWait;
 abstract class Handler {
     protected ?self $next = null;
 
-    abstract public function handle( RemoteWebDriver $driver, array $data );
+    abstract public function handle( ?RemoteWebDriver $driver, array $data );
 
     public function setNext( self $next ) {
         $this->next = $next;

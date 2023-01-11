@@ -7,7 +7,7 @@ use Facebook\WebDriver\WebDriverBy;
 
 
 class StartingReschedule extends Handler {
-    public function handle(RemoteWebDriver $driver, array $data) {
+    public function handle(RemoteWebDriver $driver = null, array $data) {
         $rescheduleOption = WebDriverBy::cssSelector('#forms .accordion .accordion-item a .fa-calendar-minus' );
 
         $this->waitForPresence( $driver, $rescheduleOption );

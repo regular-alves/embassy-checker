@@ -39,7 +39,7 @@ For a description of the Bot API, see this page: https://core.telegram.org/bots/
 
 Você precisará preencher o arquivo `.env` com o HTTP API.
 
-> 🚩 Envie uma mensagem para o seu bot. Isso será necessário para saber quem tem que receber os alertas da aplicação. 
+> 🚩 Você também irá precisar do seu ID número de usuário
 
 ### Preparando a aplicação
 
@@ -54,15 +54,23 @@ $ composer install
 Você pode utilizar  arquivo `.env.example` como base para gerar o seu `.env`.
 
 ```txt
-# credenciais de acesso ao site da embaixada
-USR_EMAIL=<your user email>
-USR_PASSWD=<your user password>
+# Credenciais para acessar o site
+USR_EMAIL=<usuário>
+USR_PASSWD=<senha>
 
-# token do telegram (<id>:<hash>)
-TELEGRAM_TOKEN=<your bot token>
+# telegram tokens
+TELEGRAM_TOKEN=<Token do BOT>
+TELEGRAM_USER_ID=<Seu ID de usuário>
 
-# endereço onde o webdriver está sendo execurado
-WEBDRIVER_LOCATION=<chrome webdriver location>
+WEBDRIVER_LOCATION=<Endereço do driver do Chrome>
+
+# Opções da aplicação
+# remova caso não queira utilizar
+NOTIFY_ONLY_DATES=1 # Notificar apenas sobre novas datas
+
+# Se deseja que a aplicação reagende automaticamente. 
+# Caso seja informada, não serão enviados notificações de data disponíveis, apenas os reagendamentos.
+AUTOMATIC_RESCHEDULE=1
 ```
 
 ## Executando o projeto
@@ -71,3 +79,5 @@ Com o webdrive rodando, execute o arquivo `index.php`:
 ```sh
 $ php index.php
 ```
+
+Você pode adicionar a execução via cron.
