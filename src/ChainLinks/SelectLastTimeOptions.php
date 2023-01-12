@@ -15,7 +15,7 @@ class SelectLastTimeOptions extends Handler
         $this->fieldId = $fieldId;
     }
 
-    public function handle(?RemoteWebDriver $driver, array $data)
+    public function handle(RemoteWebDriver $driver, array $data)
     {
         $lastOption = WebDriverBy::cssSelector("#{$this->fieldId} option:not(:empty)");
 

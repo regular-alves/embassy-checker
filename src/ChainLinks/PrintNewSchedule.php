@@ -8,7 +8,7 @@ use EmbassyChecker\Models\TelegramSender;
 
 class PrintNewSchedule extends Handler
 {
-    public function handle(?RemoteWebDriver $driver, array $data)
+    public function handle(RemoteWebDriver $driver, array $data)
     {
         $this->waitForPresence($driver, WebDriverBy::id('footer'));
 

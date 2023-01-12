@@ -6,7 +6,7 @@ use Facebook\WebDriver\Remote\RemoteWebDriver;
 
 class OpenSite extends Handler
 {
-    public function handle(?RemoteWebDriver $driver, array $data)
+    public function handle(RemoteWebDriver $driver, array $data)
     {
         $data['url'] = 'https://ais.usvisa-info.com/pt-br';
 

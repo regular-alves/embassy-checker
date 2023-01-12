@@ -11,13 +11,17 @@ abstract class Handler
 {
     protected ?self $next = null;
 
-    abstract public function handle(?RemoteWebDriver $driver, array $data);
+    abstract public function handle(RemoteWebDriver $driver, array $data);
 
     public function setNext(self $next)
     {
         $this->next = $next;
     }
 
+    /**
+     * @throws NoSuchElementException
+     * @throws TimeoutException
+     */
     protected function waitForPresence(RemoteWebDriver $driver, WebDriverBy $el)
     {
         $waiter = new WebDriverWait($driver, 2);
@@ -29,6 +33,10 @@ abstract class Handler
         return;
     }
 
+    /**
+     * @throws NoSuchElementException
+     * @throws TimeoutException
+     */
     protected function waitForBeClickable(RemoteWebDriver $driver, WebDriverBy $el)
     {
         $waiter = new WebDriverWait($driver, 2);

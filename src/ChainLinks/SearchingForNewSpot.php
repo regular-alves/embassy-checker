@@ -3,10 +3,12 @@
 namespace EmbassyChecker\ChainLinks;
 
 use Exception;
+use EmbassyChecker\Exceptions\RescheduleNotAvailable;
+use EmbassyChecker\Exceptions\TimeSpotSoonerNotAvailable;
 use EmbassyChecker\Models\TelegramSender;
-use Facebook\WebDriver\Exception\TimeoutException;
-use Facebook\WebDriver\Remote\RemoteWebDriver;
 use Facebook\WebDriver\WebDriverBy;
+use Facebook\WebDriver\Remote\RemoteWebDriver;
+use Facebook\WebDriver\Exception\{NoSuchElementException, TimeoutException};
 
 class SearchingForNewSpot extends Handler
 {
@@ -23,19 +25,14 @@ class SearchingForNewSpot extends Handler
         $this->fieldId = $fieldId;
     }
 
-    public function handle(?RemoteWebDriver $driver, array $data)
+    public function handle(RemoteWebDriver $driver, array $data)
     {
         $calendar = WebDriverBy::id($this->fieldId);
 
         try {
             $this->waitForBeClickable($driver, $calendar);
-        } catch (TimeoutException $exception) {
-            if (! $this->notifyEverything) {
-                $this->messenger
-                    ->sendMessage('Reagendamento não está disponível');
-            }
-
-            return $this->callNext($driver, $data);
+        } catch (TimeoutException | NoSuchElementException $exception) {
+            throw new RescheduleNotAvailable('Reagendamento não está disponível');
         }
 
         $driver->findElement($calendar)->click();
@@ -83,10 +80,10 @@ class SearchingForNewSpot extends Handler
         $isSooner = $availableDate < ($data['appointment-date'] ?? PHP_INT_MAX);
 
         if ($this->notifyEverything && !$isSooner) {
-            $this->messenger->sendMessage('Não encontrei datas mais recentes');
+            throw new TimeSpotSoonerNotAvailable('Não encontrei datas mais recentes');
         }
 
-        if ($isSooner && $this->automaticSchedule) {
+        if ($isSooner && $this->automaticSchedule && $foundDate) {
             $foundDate[0]->click();
         }
 

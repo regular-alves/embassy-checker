@@ -7,7 +7,7 @@ use Facebook\WebDriver\WebDriverBy;
 
 class SubmitReschedule extends Handler
 {
-    public function handle(?RemoteWebDriver $driver, array $data)
+    public function handle(RemoteWebDriver $driver, array $data)
     {
         $driver
             ->findElement(WebDriverBy::id('appointments_submit'))

@@ -22,7 +22,7 @@ class OpenAppointment extends Handler
         'december' => 'dezembro',
     ];
 
-    public function handle(?RemoteWebDriver $driver, array $data)
+    public function handle(RemoteWebDriver $driver, array $data)
     {
         $appointment = WebDriverBy::cssSelector('.attend_appointment .actions .button.primary');
 

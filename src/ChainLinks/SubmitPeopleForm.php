@@ -7,7 +7,7 @@ use Facebook\WebDriver\WebDriverBy;
 
 class SubmitPeopleForm extends Handler
 {
-    public function handle(?RemoteWebDriver $driver, array $data)
+    public function handle(RemoteWebDriver $driver, array $data)
     {
         $form = WebDriverBy::cssSelector('.mainContent form');
 
