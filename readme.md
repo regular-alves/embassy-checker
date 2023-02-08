@@ -71,6 +71,15 @@ NOTIFY_ONLY_DATES=1 # Notificar apenas sobre novas datas
 # Se deseja que a aplicação reagende automaticamente. 
 # Caso seja informada, não serão enviados notificações de data disponíveis, apenas os reagendamentos.
 AUTOMATIC_RESCHEDULE=1
+
+# Determinar um horário mínimo para os agendamentos
+RESCHEDULE_AFTER_HOURS=12
+
+# Determinar uma data mínima para novos agendamentos
+RESCHEDULE_AFTER_DATE=20230620
+
+# Determinar uma data máxima para novos agendamentos
+RESCHEDULE_BEFORE_DATE=20230831
 ```
 
 ## Executando o projeto

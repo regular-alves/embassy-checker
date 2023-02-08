@@ -41,7 +41,10 @@ class SearchingForNewSpot extends Handler
         $foundDate = false;
         $tries = 0;
 
-        while (!$foundDate || $tries < 20) {
+        $after = isset( $_env['RESCHEDULE_AFTER_DATE'] ) ? strtotime( $_env['RESCHEDULE_AFTER_DATE'] ) : false;
+        $before = isset( $_env['RESCHEDULE_BEFORE_DATE'] ) ? strtotime( $_env['RESCHEDULE_BEFORE_DATE'] ) : false;
+        
+        while ( ! $foundDate || $tries < 20 ) {
             try {
                 $foundDate = $driver
                     ->findElements(
@@ -53,28 +56,38 @@ class SearchingForNewSpot extends Handler
                 $foundDate = false;
             }
 
-            if ($foundDate) {
-                $availableDay = $foundDate[0]->getText();
-                $availableMonthYear = $driver
-                    ->findElement(
-                        WebDriverBy::cssSelector(
-                            '#ui-datepicker-div .ui-datepicker-group-last .ui-datepicker-header .ui-datepicker-title'
-                        )
-                    )
-                    ->getText();
+            if ( ! $foundDate ) {
+                $nextMonth = WebDriverBy::cssSelector('#ui-datepicker-div .ui-datepicker-group-last .ui-datepicker-next');
 
-                $availableDate = strtotime("$availableDay$availableMonthYear");
-                break;
+                $this->waitForBeClickable($driver, $nextMonth);
+                $driver->findElement($nextMonth)->click();
+
+                // waiting for js animation finishes
+                sleep(1);
+                $tries++;
+                continue;
             }
 
-            $nextMonth = WebDriverBy::cssSelector('#ui-datepicker-div .ui-datepicker-group-last .ui-datepicker-next');
+            $availableDay = $foundDate[0]->getText();
+            $availableMonthYear = $driver
+                ->findElement(
+                    WebDriverBy::cssSelector(
+                        '#ui-datepicker-div .ui-datepicker-group-last .ui-datepicker-header .ui-datepicker-title'
+                    )
+                )
+                ->getText();
 
-            $this->waitForBeClickable($driver, $nextMonth);
-            $driver->findElement($nextMonth)->click();
+            $availableDate = strtotime("$availableDay$availableMonthYear");
+            
+            if( $after && $after > $availableDate ) {
+                $foundDate = false;
+                continue;
+            }
 
-            // waiting for js animation finishes
-            sleep(1);
-            $tries++;
+            if( $before && $before < $availableDate ) {
+                $foundDate = false;
+                continue;
+            }
         }
 
         $isSooner = $availableDate < ($data['appointment-date'] ?? PHP_INT_MAX);

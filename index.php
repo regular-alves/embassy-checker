@@ -64,8 +64,9 @@ $printNewSchedule = new PrintNewSchedule();
 $openSite->setNext($authentication);
 $authentication->setNext($openAppointment);
 $openAppointment->setNext($startingReschedule);
-$startingReschedule->setNext($submitPeopleForm);
-$submitPeopleForm->setNext($searchingForNewSpot);
+$startingReschedule->setNext($searchingForNewSpot);
+// $startingReschedule->setNext($submitPeopleForm);
+// $submitPeopleForm->setNext($searchingForNewSpot);
 
 if ($_ENV['AUTOMATIC_RESCHEDULE']) {
     $searchingForNewSpot->setNext($selectingTimeSpot);

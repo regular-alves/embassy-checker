@@ -2,6 +2,7 @@
 
 namespace EmbassyChecker\ChainLinks;
 
+use EmbassyChecker\Exceptions\TimeSpotSoonerNotAvailable;
 use Facebook\WebDriver\Remote\RemoteWebDriver;
 
 class OpenSite extends Handler
