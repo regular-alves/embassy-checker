@@ -15,6 +15,8 @@ class SearchingForNewSpot extends Handler
     private $messenger = null;
     private $notifyEverything = true;
     private $automaticSchedule = false;
+    private $rescheduleAfter = false;
+    private $rescheduleBefore = false;
     private $fieldId;
 
     public function __construct(string $fieldId)
@@ -22,6 +24,8 @@ class SearchingForNewSpot extends Handler
         $this->messenger = new TelegramSender();
         $this->notifyEverything = $_ENV['NOTIFY_ONLY_DATES'] ?? false;
         $this->automaticSchedule = $_ENV['AUTOMATIC_RESCHEDULE'] ?? false;
+        $this->rescheduleAfter = isset( $_ENV['RESCHEDULE_AFTER_DATE'] ) ? strtotime( $_ENV['RESCHEDULE_AFTER_DATE'] ) : false;
+        $this->rescheduleBefore = isset( $_ENV['RESCHEDULE_BEFORE_DATE'] ) ? strtotime( $_ENV['RESCHEDULE_BEFORE_DATE'] ) : false;
         $this->fieldId = $fieldId;
     }
 
@@ -40,11 +44,8 @@ class SearchingForNewSpot extends Handler
         $availableDate = 0;
         $foundDate = false;
         $tries = 0;
-
-        $after = isset( $_env['RESCHEDULE_AFTER_DATE'] ) ? strtotime( $_env['RESCHEDULE_AFTER_DATE'] ) : false;
-        $before = isset( $_env['RESCHEDULE_BEFORE_DATE'] ) ? strtotime( $_env['RESCHEDULE_BEFORE_DATE'] ) : false;
         
-        while ( ! $foundDate || $tries < 20 ) {
+        while ( ! $foundDate && $tries < 20 ) {
             try {
                 $foundDate = $driver
                     ->findElements(
@@ -64,6 +65,7 @@ class SearchingForNewSpot extends Handler
 
                 // waiting for js animation finishes
                 sleep(1);
+                
                 $tries++;
                 continue;
             }
@@ -79,33 +81,41 @@ class SearchingForNewSpot extends Handler
 
             $availableDate = strtotime("$availableDay$availableMonthYear");
             
-            if( $after && $after > $availableDate ) {
+            if( $this->rescheduleAfter && $this->rescheduleAfter > $availableDate ) {
                 $foundDate = false;
+                
+                $tries++;
                 continue;
             }
 
-            if( $before && $before < $availableDate ) {
+            if( $this->rescheduleBefore && $this->rescheduleBefore < $availableDate ) {
                 $foundDate = false;
+
+                $tries++;
                 continue;
             }
+
+            break;
         }
 
-        $isSooner = $availableDate < ($data['appointment-date'] ?? PHP_INT_MAX);
+        if ( $availableDate >= ($data['appointment-date'] ?? PHP_INT_MAX)) {
+            if ($this->notifyEverything ) {
+                throw new TimeSpotSoonerNotAvailable('Não encontrei datas mais recentes');
+            }
 
-        if ($this->notifyEverything && !$isSooner) {
-            throw new TimeSpotSoonerNotAvailable('Não encontrei datas mais recentes');
+            return;
         }
 
-        if ($isSooner && $this->automaticSchedule && $foundDate) {
-            $foundDate[0]->click();
-        }
-
-        if ($isSooner && !$this->automaticSchedule) {
+        if ( ! $this->automaticSchedule ) {
             $this->messenger->sendMessage(
                 sprintf("Encontrei vagas para %s.\n%s", date('d/m/Y', $availableDate), $data['url']),
                 true
             );
+
+            return;
         }
+        
+        $foundDate[0]->click();
 
         return $this->callNext($driver, $data);
     }

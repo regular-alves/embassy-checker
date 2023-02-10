@@ -17,6 +17,7 @@ use EmbassyChecker\Exceptions\{
   RescheduleNotAvailable,
   TimeSpotSoonerNotAvailable,
 };
+use Facebook\WebDriver\Chrome\ChromeOptions;
 use Facebook\WebDriver\Exception\{
   NoSuchElementException,
   TimeoutException,
@@ -31,6 +32,26 @@ require 'vendor/autoload.php';
 $dotenv = Dotenv::createImmutable(__DIR__);
 $dotenv->load();
 
+$cliVars = getopt(
+    '',
+    [
+        'USR_EMAIL:',
+        'USR_PASSWD:',
+        'TELEGRAM_TOKEN:',
+        'TELEGRAM_USER_ID:',
+        'WEBDRIVER_LOCATION:',
+        'AUTOMATIC_RESCHEDULE:',
+        'RESCHEDULE_AFTER_DATE:',
+        'RESCHEDULE_BEFORE_DATE:',
+        'APPOINTMENT_ID:',
+    ]
+);
+
+$_ENV = array_merge( 
+    $_ENV ?: [],
+    $cliVars ?: []
+);
+
 $envVarsAvailable = isset(
     $_ENV['USR_EMAIL'],
     $_ENV['USR_PASSWD'],
@@ -43,10 +64,22 @@ if (!$envVarsAvailable) {
     throw new \Exception('Please, check your env file.');
 }
 
-$driver = RemoteWebDriver::create(
-    $_ENV['WEBDRIVER_LOCATION'],
-    DesiredCapabilities::chrome()
+$ops = new ChromeOptions();
+$capabilities = DesiredCapabilities::chrome();
+
+$ops->addArguments(
+    [
+        '--user-agent=' .
+        'Mozilla/5.0 (Windows NT 10.0; Win64; x64) ' .
+        'AppleWebKit/537.36 (KHTML, like Gecko) ' .
+        'Chrome/87.0.4324.104 Safari/537.36'
+    ]
 );
+
+$ops->setExperimentalOption( 'excludeSwitches', [ 'enable-automation' ] );
+$capabilities->setCapability( ChromeOptions::CAPABILITY, $ops );
+
+$driver = RemoteWebDriver::create( $_ENV['WEBDRIVER_LOCATION'], $capabilities );
 
 // Setup-ing chain
 $openSite = new OpenSite();
@@ -81,7 +114,7 @@ $messenger = new TelegramSender();
 $notifyEverything = !($_ENV['NOTIFY_ONLY_DATES'] ?? false);
 
 try {
-    $openSite->handle($driver, []);
+    $openSite->handle( $driver, [] );
 } 
 catch (RescheduleNotAvailable | TimeSpotSoonerNotAvailable $exception) {
     if ($notifyEverything) {

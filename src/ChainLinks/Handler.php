@@ -50,6 +50,8 @@ abstract class Handler
 
     public function callNext(RemoteWebDriver $driver, array $data)
     {
+        sleep( rand( 2, 15 ) );
+
         if ($this->next) {
             return $this
                 ->next
