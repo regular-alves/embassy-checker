@@ -35,15 +35,15 @@ $dotenv->load();
 $cliVars = getopt(
     '',
     [
-        'USR_EMAIL:',
-        'USR_PASSWD:',
-        'TELEGRAM_TOKEN:',
-        'TELEGRAM_USER_ID:',
-        'WEBDRIVER_LOCATION:',
-        'AUTOMATIC_RESCHEDULE:',
-        'RESCHEDULE_AFTER_DATE:',
-        'RESCHEDULE_BEFORE_DATE:',
-        'APPOINTMENT_ID:',
+        'USR_EMAIL::',
+        'USR_PASSWD::',
+        'TELEGRAM_TOKEN::',
+        'TELEGRAM_USER_ID::',
+        'WEBDRIVER_LOCATION::',
+        'AUTOMATIC_RESCHEDULE::',
+        'RESCHEDULE_AFTER_DATE::',
+        'RESCHEDULE_BEFORE_DATE::',
+        'APPOINTMENT_ID::',
     ]
 );
 
