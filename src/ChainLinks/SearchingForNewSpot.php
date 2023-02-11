@@ -3,35 +3,131 @@
 namespace EmbassyChecker\ChainLinks;
 
 use Exception;
-use EmbassyChecker\Exceptions\RescheduleNotAvailable;
-use EmbassyChecker\Exceptions\TimeSpotSoonerNotAvailable;
 use EmbassyChecker\Models\TelegramSender;
-use Facebook\WebDriver\WebDriverBy;
-use Facebook\WebDriver\Remote\RemoteWebDriver;
+use EmbassyChecker\Helpers\DateTimeChecker;
+use EmbassyChecker\Exceptions\{ RescheduleNotAvailable, TimeSpotSoonerNotAvailable };
+use Facebook\WebDriver\{WebDriverBy, WebDriverSelect};
+use Facebook\WebDriver\Remote\{ RemoteWebDriver, RemoteWebElement };
 use Facebook\WebDriver\Exception\{NoSuchElementException, TimeoutException};
 
 class SearchingForNewSpot extends Handler
 {
     private $messenger = null;
-    private $notifyEverything = true;
-    private $automaticSchedule = false;
-    private $rescheduleAfter = false;
-    private $rescheduleBefore = false;
-    private $fieldId;
+    private bool $notifyEverything = true;
+    private bool $automaticSchedule = false;
+    private ?int $rescheduleAfter;
+    private ?int $rescheduleBefore;
+    private string $dateFieldId;
+    private string $timeFieldId;
+    private int $preferredAfter;
 
-    public function __construct(string $fieldId)
+    public function __construct(string $dateFieldId, string $timeFieldId)
     {
+
+        $this->dateFieldId = $dateFieldId;
+        $this->timeFieldId = $timeFieldId;
+
         $this->messenger = new TelegramSender();
-        $this->notifyEverything = $_ENV['NOTIFY_ONLY_DATES'] ?? false;
+        
+        $this->notifyEverything = !($_ENV['NOTIFY_ONLY_DATES'] ?? false);
         $this->automaticSchedule = $_ENV['AUTOMATIC_RESCHEDULE'] ?? false;
-        $this->rescheduleAfter = isset( $_ENV['RESCHEDULE_AFTER_DATE'] ) ? strtotime( $_ENV['RESCHEDULE_AFTER_DATE'] ) : false;
-        $this->rescheduleBefore = isset( $_ENV['RESCHEDULE_BEFORE_DATE'] ) ? strtotime( $_ENV['RESCHEDULE_BEFORE_DATE'] ) : false;
-        $this->fieldId = $fieldId;
+        $this->rescheduleAfter = isset( $_ENV['RESCHEDULE_AFTER_DATE'] ) ? strtotime( $_ENV['RESCHEDULE_AFTER_DATE'] ) : null;
+        $this->rescheduleBefore = isset( $_ENV['RESCHEDULE_BEFORE_DATE'] ) ? strtotime( $_ENV['RESCHEDULE_BEFORE_DATE'] ) : null;
+        $this->preferredAfter = (int) env('RESCHEDULE_AFTER_HOURS') ?? 0;
     }
 
     public function handle(RemoteWebDriver $driver, array $data)
     {
-        $calendar = WebDriverBy::id($this->fieldId);
+        $this->openCalendar( $driver );
+
+        $spotFound = false;
+        $tries = 0;
+        
+        while ( ! $spotFound && $tries < 20 ) {
+            try {
+                $foundDate = $this->getDay( $driver );
+            } catch (Exception $exception) {
+                $this->nextMonth( $driver );
+                
+                $tries++;
+                continue;
+            }
+
+            $availableDay = $foundDate->getText();
+            $availableMonthYear = $this->getMonthYear( $driver );
+            $availableFullDate = strtotime("$availableDay$availableMonthYear");
+            
+            if( ! DateTimeChecker::isDateBetween( $availableFullDate, $this->rescheduleAfter, $this->rescheduleBefore ) ) {
+                $driver->executeScript(
+                    "arguments[0].classList.add('ignore');",
+                    [ $foundDate ],
+                );
+
+                $tries++;
+                continue;
+            }
+
+            if ( $availableFullDate >= ($data['appointment-date'] ?? PHP_INT_MAX)) {
+                if ( $this->notifyEverything ) {
+                    throw new TimeSpotSoonerNotAvailable('Não encontrei datas mais recentes');
+                }
+
+                return;
+            }
+
+            if ( ! $this->automaticSchedule ) {
+                $this->messenger->sendMessage(
+                    sprintf("Encontrei vagas para %s.\n%s", date('d/m/Y', $availableFullDate), $data['url']),
+                    true
+                );
+    
+                return;
+            }
+            
+            $foundDate->click();
+
+            $timeOptions = WebDriverBy::cssSelector("#{$this->timeFieldId} option:not(:empty)");
+
+            $this->waitForPresence($driver, $timeOptions);
+
+            $timeSpots = array_map(
+                fn( $item ) => $item->getText(),
+                $driver->findElements( $timeOptions )
+            );
+
+            $availableSpots = DateTimeChecker::getTimesBetween( $timeSpots, $this->preferredAfter );
+
+            if ( ! $availableSpots ) {
+                // $this->openCalendar( $driver );
+
+                $driver->executeScript(
+                    "arguments[0].classList.add('ignore');",
+                    [ $foundDate ],
+                );
+
+                $tries++;
+                continue;
+            }
+
+            $lastTimeSpot = array_pop( $availableSpots );
+
+            $field = new WebDriverSelect(
+                $driver->findElement( WebDriverBy::id( $this->timeFieldId ) )
+            );
+
+            $field->selectByVisibleText( $lastTimeSpot );
+
+            $data['new-schedule'] = $availableFullDate;
+            $spotFound = true;
+        }
+
+        return $spotFound 
+            ? $this->callNext($driver, $data)
+            : null;
+    }
+
+    private function openCalendar( RemoteWebDriver $driver ): void {
+        $calendar = WebDriverBy::id($this->dateFieldId);
 
         try {
             $this->waitForBeClickable($driver, $calendar);
@@ -39,84 +135,36 @@ class SearchingForNewSpot extends Handler
             throw new RescheduleNotAvailable('Reagendamento não está disponível');
         }
 
-        $driver->findElement($calendar)->click();
+        $driver->findElement( $calendar )
+            ->click();
+    }
 
-        $availableDate = 0;
-        $foundDate = false;
-        $tries = 0;
-        
-        while ( ! $foundDate && $tries < 20 ) {
-            try {
-                $foundDate = $driver
-                    ->findElements(
-                        WebDriverBy::cssSelector(
-                            '#ui-datepicker-div .ui-datepicker-calendar tbody td:not(.ui-state-disabled)'
-                        )
-                    );
-            } catch (Exception $exception) {
-                $foundDate = false;
-            }
+    private function getDay( RemoteWebDriver $driver ): RemoteWebElement {
+        return $driver->findElement(
+            WebDriverBy::cssSelector(
+                '#ui-datepicker-div .ui-datepicker-calendar tbody ' .
+                'td:not(.ui-state-disabled):not(.ignore)'
+            )
+        );
+    }
 
-            if ( ! $foundDate ) {
-                $nextMonth = WebDriverBy::cssSelector('#ui-datepicker-div .ui-datepicker-group-last .ui-datepicker-next');
-
-                $this->waitForBeClickable($driver, $nextMonth);
-                $driver->findElement($nextMonth)->click();
-
-                // waiting for js animation finishes
-                sleep(1);
-                
-                $tries++;
-                continue;
-            }
-
-            $availableDay = $foundDate[0]->getText();
-            $availableMonthYear = $driver
-                ->findElement(
-                    WebDriverBy::cssSelector(
-                        '#ui-datepicker-div .ui-datepicker-group-last .ui-datepicker-header .ui-datepicker-title'
-                    )
+    private function getMonthYear( $driver ): string {
+        return $driver
+            ->findElement(
+                WebDriverBy::cssSelector(
+                    '#ui-datepicker-div .ui-datepicker-group-last .ui-datepicker-header .ui-datepicker-title'
                 )
-                ->getText();
+            )
+            ->getText();
+    }
 
-            $availableDate = strtotime("$availableDay$availableMonthYear");
-            
-            if( $this->rescheduleAfter && $this->rescheduleAfter > $availableDate ) {
-                $foundDate = false;
-                
-                $tries++;
-                continue;
-            }
+    private function nextMonth( RemoteWebDriver $driver ): void {
+        $nextMonth = WebDriverBy::cssSelector('#ui-datepicker-div .ui-datepicker-group-last .ui-datepicker-next');
 
-            if( $this->rescheduleBefore && $this->rescheduleBefore < $availableDate ) {
-                $foundDate = false;
+        $this->waitForBeClickable($driver, $nextMonth);
+        $driver->findElement($nextMonth)->click();
 
-                $tries++;
-                continue;
-            }
-
-            break;
-        }
-
-        if ( $availableDate >= ($data['appointment-date'] ?? PHP_INT_MAX)) {
-            if ($this->notifyEverything ) {
-                throw new TimeSpotSoonerNotAvailable('Não encontrei datas mais recentes');
-            }
-
-            return;
-        }
-
-        if ( ! $this->automaticSchedule ) {
-            $this->messenger->sendMessage(
-                sprintf("Encontrei vagas para %s.\n%s", date('d/m/Y', $availableDate), $data['url']),
-                true
-            );
-
-            return;
-        }
-        
-        $foundDate[0]->click();
-
-        return $this->callNext($driver, $data);
+        // waiting for js animation finishes
+        sleep(1);
     }
 }

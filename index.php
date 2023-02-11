@@ -8,7 +8,6 @@ use EmbassyChecker\ChainLinks\{
   OpenSite,
   PrintNewSchedule,
   SearchingForNewSpot,
-  SelectLastTimeOptions,
   StartingReschedule,
   SubmitPeopleForm,
   SubmitReschedule,
@@ -87,10 +86,8 @@ $authentication = new Authentication();
 $openAppointment = new OpenAppointment();
 $startingReschedule = new StartingReschedule();
 $submitPeopleForm = new SubmitPeopleForm();
-$searchingForNewSpot = new SearchingForNewSpot('appointments_consulate_appointment_date');
-$selectingTimeSpot = new SelectLastTimeOptions('appointments_consulate_appointment_time');
-$searchingForNewCasvSpot = new SearchingForNewSpot('appointments_asc_appointment_date');
-$selectingCasvTimeSpot = new SelectLastTimeOptions('appointments_asc_appointment_time');
+$searchingForNewSpot = new SearchingForNewSpot( 'appointments_consulate_appointment_date', 'appointments_consulate_appointment_time' );
+$searchingForNewCasvSpot = new SearchingForNewSpot( 'appointments_asc_appointment_date', 'appointments_asc_appointment_time' );
 $submitReschedule = new SubmitReschedule();
 $printNewSchedule = new PrintNewSchedule();
 
@@ -99,13 +96,10 @@ $authentication->setNext($openAppointment);
 $openAppointment->setNext($startingReschedule);
 $startingReschedule->setNext($searchingForNewSpot);
 // $startingReschedule->setNext($submitPeopleForm);
-// $submitPeopleForm->setNext($searchingForNewSpot);
 
 if ($_ENV['AUTOMATIC_RESCHEDULE']) {
-    $searchingForNewSpot->setNext($selectingTimeSpot);
-    $selectingTimeSpot->setNext($searchingForNewCasvSpot);
-    $searchingForNewCasvSpot->setNext($selectingCasvTimeSpot);
-    $selectingCasvTimeSpot->setNext($submitReschedule);
+    $searchingForNewSpot->setNext($searchingForNewCasvSpot);
+    $searchingForNewCasvSpot->setNext($submitReschedule);
     $submitReschedule->setNext($printNewSchedule);
 }
 
