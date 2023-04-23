@@ -12,16 +12,7 @@ Com ele é possível verificar se foi disponibilizada uma data mais recente para
 ### Chrome web driver
 Faça o download do [Chrome web driver](https://chromedriver.chromium.org/downloads) e o instale.
 
-Após a instalação, você pode inicializar o driver com o seguinte comando:
-
-```sh
-$ chromedriver --port=4444
-Starting ChromeDriver 108.0.5359.124 (603c1cb86aff29563721da2a6351c0d08865350d-refs/branch-heads/5359@{#1179}) on port 4444
-Only local connections are allowed.
-Please see https://chromedriver.chromium.org/security-considerations for suggestions on keeping ChromeDriver safe.
-ChromeDriver was started successfully.
-```
-O parâmetro `--port` determina em que porta o driver irá ser executado.
+Após a instalação, copie o caminho do executável e adicione ao seu env.
 
 ### Credenciais de bot do Telegram
 Para gerar credenciais de bot do telegram, você deve falar com [@BotFather](https://telegram.me/botfather).
@@ -62,7 +53,7 @@ USR_PASSWD=<senha>
 TELEGRAM_TOKEN=<Token do BOT>
 TELEGRAM_USER_ID=<Seu ID de usuário>
 
-WEBDRIVER_LOCATION=<Endereço do driver do Chrome>
+WEBDRIVER_CHROME_DRIVER=<caminho para o driver do Chrome>
 
 # Opções da aplicação
 # remova caso não queira utilizar

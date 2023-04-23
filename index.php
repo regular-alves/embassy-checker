@@ -16,15 +16,13 @@ use EmbassyChecker\Exceptions\{
   RescheduleNotAvailable,
   TimeSpotSoonerNotAvailable,
 };
+use Facebook\WebDriver\Chrome\ChromeDriver;
 use Facebook\WebDriver\Chrome\ChromeOptions;
 use Facebook\WebDriver\Exception\{
   NoSuchElementException,
   TimeoutException,
 };
-use Facebook\WebDriver\Remote\{
-  DesiredCapabilities,
-  RemoteWebDriver,
-};
+use Facebook\WebDriver\Remote\DesiredCapabilities;
 
 require 'vendor/autoload.php';
 
@@ -78,7 +76,7 @@ $ops->addArguments(
 $ops->setExperimentalOption( 'excludeSwitches', [ 'enable-automation' ] );
 $capabilities->setCapability( ChromeOptions::CAPABILITY, $ops );
 
-$driver = RemoteWebDriver::create( $_ENV['WEBDRIVER_LOCATION'], $capabilities );
+$driver = ChromeDriver::start( $capabilities );
 
 // Setup-ing chain
 $openSite = new OpenSite();
@@ -118,6 +116,9 @@ catch (RescheduleNotAvailable | TimeSpotSoonerNotAvailable $exception) {
 catch (NoSuchElementException | TimeoutException $exception) {
     $messenger->sendMessage('Encontrei um erro na execução');    
 } 
+catch (Throwable $throw) {
+    echo $throw->getMessage();
+}
 finally {
     $driver->quit();
 }
